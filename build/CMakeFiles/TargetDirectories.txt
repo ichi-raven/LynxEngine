@@ -1,3 +1,0 @@
-/home/ichi/C++/LynxEngine/build/CMakeFiles/rebuild_cache.dir
-/home/ichi/C++/LynxEngine/build/CMakeFiles/edit_cache.dir
-/home/ichi/C++/LynxEngine/build/CMakeFiles/App.dir
