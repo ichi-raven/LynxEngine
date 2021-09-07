@@ -8,8 +8,6 @@ namespace Lynx
 	class Scene;
 }
 
-//#ifndef _Application_Scene_IMPL//実装部は一度だけの展開
-//#define _Application_Scene_IMPL
 #pragma once
 
 #include <unordered_map>
@@ -340,5 +338,3 @@ namespace Lynx
 		
 	};
 };
-
-//#endif //!_Application_Scene_IMPL

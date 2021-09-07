@@ -16,7 +16,7 @@ include_directories(
    cutlass
    freetype
    portaudio
-   "/usr/local/include/assimp"
+   "/usr/local/include/assimp" #AUR's assimp is broken
    "./include"
 )
 

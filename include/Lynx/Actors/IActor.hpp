@@ -9,7 +9,6 @@
 #include "../Components/IComponent.hpp"
 
 //これをクラス宣言部に書けば、継承した関数はすべて定義されます
-//使用例はSampleActor等を参照してください
 #define GEN_ACTOR(ACTOR_TYPE, COMMONREGION_TYPE) \
 public:\
 ACTOR_TYPE(Lynx::ActorsInScene<COMMONREGION_TYPE>& actors, const std::shared_ptr<COMMONREGION_TYPE>& sceneCommonRegion, const std::shared_ptr<Cutlass::Context>& context, const std::shared_ptr<Lynx::System>& system):IActor(actors, sceneCommonRegion, context, system){}\
@@ -65,8 +64,7 @@ namespace Lynx
 
         virtual ~IActor()
         {
-            // for (const auto& component : mComponentsVec)
-            //     component->requireDestroy();
+
         };
 
         //構築
@@ -79,24 +77,11 @@ namespace Lynx
 
         void updateAll()
         {
-            // if(mRequireDestroyFlag)
-            //     return;
             update();
             for (auto& component : mComponentsVec)
                 if(component->getUpdateFlag())
                     component->update();
         }
-
-        // void requireDestroy()
-        // {
-        //     mRequireDestroyFlag = true;
-        // }
-
-        // //削除が要求されている
-        // bool isDestroyRequired() const
-        // {
-        //     return mRequireDestroyFlag;
-        // }
 
         //なければnullopt, 同型のComponentのうち最も前のものを返します
         template<typename RequiredComponent>
