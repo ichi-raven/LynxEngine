@@ -222,13 +222,12 @@ namespace Lynx
 
     void SkeletalMeshComponent::create
     (
-        const std::vector<Vertex>& vertices,
-        const std::vector<uint32_t>& indices,
+        const std::vector<Mesh>& meshes,
         const Skeleton& skeleton
     )
     {
         //MeshComponentと同じ
-        MeshComponent::create(vertices, indices);
+        MeshComponent::create(meshes);
         mSkeleton = skeleton;
     }
 

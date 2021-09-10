@@ -31,6 +31,14 @@ namespace Lynx
             }
         };
 
+        struct Mesh 
+	    {
+            std::vector<MeshComponent::Vertex> vertices;
+            std::vector<uint32_t> indices;
+            std::string nodeName;
+            std::string meshName;
+        };
+
         // struct CPUVertex
         // {
         //     glm::vec3 pos;
@@ -51,6 +59,8 @@ namespace Lynx
             const std::vector<uint32_t>& indices
         );
 
+        void create(const std::vector<Mesh>& meshes);
+
         //基本スタティックメッシュ構築
         void createCube(const double& edgeLength);
         void createPlane(const double& xSize, const double& zSize);
@@ -65,17 +75,16 @@ namespace Lynx
         Transform& getTransform();
         //const Transform& getTransform() const;
 
-        void setTopology(Cutlass::Topology topology);
-        Cutlass::Topology getTopology() const;
+        // void setTopology(Cutlass::Topology topology);
+        // Cutlass::Topology getTopology() const;
 
-        void setRasterizerState(const Cutlass::RasterizerState& rasterizerState);
-        const Cutlass::RasterizerState& getRasterizerState() const;
+        // void setRasterizerState(const Cutlass::RasterizerState& rasterizerState);
+        // const Cutlass::RasterizerState& getRasterizerState() const;
 
-        const uint32_t getVertexNum() const;
-        const uint32_t getIndexNum() const;
+        const std::vector<Mesh>& getMeshes() const;
 
-        const std::vector<Vertex>& getVertices() const;
-        const std::vector<uint32_t>& getIndices() const; 
+        // const std::vector<Vertex>& getVertices() const;
+        // const std::vector<uint32_t>& getIndices() const; 
 
         // const Cutlass::HBuffer& getVB() const;
 
@@ -89,8 +98,7 @@ namespace Lynx
         bool mEnabled;
         Transform mTransform;
 
-        std::vector<Vertex> mVertices;
-        std::vector<uint32_t> mIndices;
+        std::vector<Mesh> mMeshes;
 
         Cutlass::Topology mTopology;
         Cutlass::RasterizerState mRasterizerState;

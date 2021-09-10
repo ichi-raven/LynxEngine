@@ -3,9 +3,11 @@ static const int MAX_LIGHT_NUM = 16;
 
 struct Light
 {
-	uint   lightType;		  //ライトのタイプ(0:directional, 1:point)
+	float   lightType;		  //ライトのタイプ(0:directional, 1:point)
     float3 lightDirection;    // ライトの方向
     float4 lightColor;        // ライトのカラー
+	float3 lightPos;		  // ライトの場所(ポイントライトのみ)
+	float  lightRange;		  // ライトの影響範囲(ポイントライトのみ)
 };
 
 cbuffer LightCB : register(b0, space0)
@@ -87,10 +89,22 @@ float4 PSMain(VSOutput input) : SV_Target0
 
 	for(uint i = 0; i < MAX_LIGHT_NUM; ++i)
 	{
-		lightDiffuse = 1 / 3.141593 * lambert(normal.xyz, lights[i].lightDirection, lights[i].lightColor);
+		if(lights[i].lightType == 0)
+		{
+			lightDiffuse = 1 / 3.141593 * lambert(normal.xyz, normalize(lights[i].lightDirection), lights[i].lightColor);
+			lightSpecular = 1 / 3.141593 * phong(cameraPos, worldPos.xyz, normalize(lights[i].lightDirection), normal.xyz, lights[i].lightColor);
+		}
+		else
+		{
+			float3 lightDir = lights[i].lightPos - worldPos.xyz;
+			float distance = length(lightDir);
+			float3 normalizedDir = lightDir / distance;
+			float affection = max(0.f, 1.f - 1.f / lights[i].lightRange * distance);
+			affection *= affection;//square
 
-		lightSpecular = 1 / 3.141593 * phong(cameraPos, worldPos.xyz, lights[i].lightDirection, normal.xyz, lights[i].lightColor);
-
+			lightDiffuse = affection / 3.141593 * lambert(normal.xyz, normalizedDir, lights[i].lightColor);
+			lightSpecular = affection / 3.141593 * phong(cameraPos, worldPos.xyz, normalizedDir, normal.xyz, lights[i].lightColor);
+		}
 		lightAll += (lightDiffuse + lightSpecular);
 	}
 

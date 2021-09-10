@@ -192,13 +192,32 @@ namespace Lynx
 
         //デフォルトコマンド構築
         CommandList cl;
-        cl.clear();
-        mContext->createCommandBuffer(cl, mShadowCB);
-        mContext->createCommandBuffer(cl, mGeometryCB);
-        mContext->createCommandBuffer(cl, mLightingCB);
-        mContext->createCommandBuffer(cl, mForwardCB);
-        mContext->createCommandBuffer(cl, mPostEffectCB);
-        mContext->createCommandBuffer(cl, mSpriteCB);
+        {
+            cl.clear();
+            cl.begin(mShadowPass);
+            cl.end();
+            mContext->createCommandBuffer(cl, mShadowCB);
+        }
+        {
+            cl.clear();
+            cl.begin(mGBuffer.renderPass);
+            cl.end();
+            mContext->createCommandBuffer(cl, mGeometryCB);
+        }
+        {
+            cl.clear();
+            cl.begin(mLightingPass);
+            cl.end();
+            mContext->createCommandBuffer(cl, mLightingCB);
+        }
+        {
+            cl.clear();
+            cl.begin(mSpritePass);
+            cl.end();
+            mContext->createCommandBuffer(cl, mSpriteCB);
+        }
+        //mContext->createCommandBuffer(cl, mForwardCB);
+        //mContext->createCommandBuffer(cl, mPostEffectCB);
         
         {//カメラ用バッファを作成しておく
             BufferInfo bi;
@@ -228,7 +247,7 @@ namespace Lynx
                     mShadowFS,
                     mShadowPass,
                     DepthStencilState::eDepth,
-                    RasterizerState(PolygonMode::eFill, CullMode::eBack, FrontFace::eCounterClockwise),
+                    RasterizerState(PolygonMode::eFill, CullMode::eNone, FrontFace::eCounterClockwise),
                     Topology::eTriangleList
                 );
 
@@ -338,40 +357,6 @@ namespace Lynx
         tmp.mesh = mesh;
         tmp.material = material;
 
-        //頂点バッファ、インデックスバッファ構築
-        {
-            Cutlass::BufferInfo bi;
-            bi.setVertexBuffer<MeshComponent::Vertex>(mesh_->getVertexNum());
-            mContext->createBuffer(bi, tmp.VB);
-            mContext->writeBuffer(mesh_->getVertices().size() * sizeof(MeshComponent::Vertex), mesh_->getVertices().data(), tmp.VB);
-        }
-
-        {
-            Cutlass::BufferInfo bi;
-            bi.setIndexBuffer<uint32_t>(mesh_->getIndexNum());
-            mContext->createBuffer(bi, tmp.IB);
-            mContext->writeBuffer(mesh_->getIndices().size() * sizeof(uint32_t), mesh_->getIndices().data(), tmp.IB);
-        }
-
-        //定数バッファ構築
-        {
-            Cutlass::BufferInfo bi;
-            {//WVP
-                bi.setUniformBuffer<SceneData>();
-                mContext->createBuffer(bi, tmp.sceneCB);
-            }
-
-            {//ボーン
-                //注意 : いまのところおいとく
-                BoneData data;
-
-                bi.setUniformBuffer<BoneData>();
-                mContext->createBuffer(bi, tmp.boneCB);
-                mContext->writeBuffer(sizeof(BoneData), &data, tmp.boneCB);
-            }
-
-        }
-
         // if(castShadow)
         // {//シャドウマップ用パス
         
@@ -404,6 +389,41 @@ namespace Lynx
         //         assert(!"failed to create geometry pipeline");
         // }
 
+        //頂点バッファ、インデックスバッファ構築
+        for(const auto& m : mesh_->getMeshes())
+        {
+            Cutlass::HBuffer VB, IB;
+            Cutlass::BufferInfo bi;
+            bi.setVertexBuffer<MeshComponent::Vertex>(m.vertices.size());
+            mContext->createBuffer(bi, VB);
+            mContext->writeBuffer(m.vertices.size() * sizeof(MeshComponent::Vertex), m.vertices.data(), VB);
+            tmp.VBs.emplace_back(VB);
+            
+            bi.setIndexBuffer<uint32_t>(m.indices.size());
+            mContext->createBuffer(bi, IB);
+            mContext->writeBuffer(m.indices.size() * sizeof(uint32_t), m.indices.data(), IB);
+            tmp.IBs.emplace_back(IB);
+        }
+
+        //定数バッファ構築
+        {
+            Cutlass::BufferInfo bi;
+            {//WVP
+                bi.setUniformBuffer<SceneData>();
+                mContext->createBuffer(bi, tmp.sceneCB);
+            }
+
+            {//ボーン
+                //注意 : いまのところおいとく
+                BoneData data;
+
+                bi.setUniformBuffer<BoneData>();
+                mContext->createBuffer(bi, tmp.boneCB);
+                mContext->writeBuffer(sizeof(BoneData), &data, tmp.boneCB);
+            }
+
+        }
+
         {//コマンド作成
 
             //シャドウパス
@@ -419,9 +439,13 @@ namespace Lynx
                 SubCommandList scl(mShadowPass);
                 scl.bind(mShadowPipeline);
 
-                scl.bind(tmp.VB, tmp.IB);
                 scl.bind(0, bufferSet);
-                scl.renderIndexed(mesh_->getIndexNum(), 1, 0, 0, 0);
+                assert(tmp.VBs.size() == tmp.IBs.size());
+                for(size_t i = 0; i < tmp.VBs.size(); ++i)
+                {
+                    scl.bind(tmp.VBs[i], tmp.IBs[i]);
+                    scl.renderIndexed(mesh_->getMeshes()[i].indices.size(), 1, 0, 0, 0);
+                }
 
                 //HCommandBuffer cb;
                 if(Cutlass::Result::eSuccess != mContext->createSubCommandBuffer(scl, tmp.shadowSubCB))
@@ -448,15 +472,19 @@ namespace Lynx
                     if(textures.empty())
                         textureSet.bind(0, mDebugTex);
                     else
-                        textureSet.bind(0, textures[0].handle);
+                        textureSet.bind(0, textures.back().handle);
                 }
 
                 SubCommandList scl(mGBuffer.renderPass);
                 scl.bind(mGeometryPipeline);
-                scl.bind(tmp.VB, tmp.IB);
                 scl.bind(0, bufferSet);
                 scl.bind(1, textureSet);
-                scl.renderIndexed(mesh_->getIndexNum(), 1, 0, 0, 0);
+
+                for(size_t i = 0; i < tmp.VBs.size(); ++i)
+                {
+                    scl.bind(tmp.VBs[i], tmp.IBs[i]);
+                    scl.renderIndexed(mesh_->getMeshes()[i].indices.size(), 1, 0, 0, 0);
+                }
 
                 HCommandBuffer cb;
                 if(Cutlass::Result::eSuccess != mContext->createSubCommandBuffer(scl, tmp.geometrySubCB))
@@ -498,19 +526,23 @@ namespace Lynx
         const auto& skeletalMesh_ = skeletalMesh.lock();
         const auto& material_ = material.lock();
 
-        //頂点バッファ、インデックスバッファ構築
+       //頂点バッファ、インデックスバッファ構築
+        for(const auto& m : skeletalMesh_->getMeshes())
         {
+            auto&& vb = tmp.VBs.emplace_back();
             Cutlass::BufferInfo bi;
-            bi.setVertexBuffer<MeshComponent::Vertex>(skeletalMesh_->getVertexNum());
-            mContext->createBuffer(bi, tmp.VB);
-            mContext->writeBuffer(skeletalMesh_->getVertices().size() * sizeof(MeshComponent::Vertex), skeletalMesh_->getVertices().data(), tmp.VB);
+            bi.setVertexBuffer<MeshComponent::Vertex>(m.vertices.size());
+            mContext->createBuffer(bi, vb);
+            mContext->writeBuffer(m.vertices.size() * sizeof(MeshComponent::Vertex), m.vertices.data(), vb);
         }
 
+        for(const auto& m : skeletalMesh_->getMeshes())
         {
+            auto&& ib = tmp.IBs.emplace_back();
             Cutlass::BufferInfo bi;
-            bi.setIndexBuffer<uint32_t>(skeletalMesh_->getIndexNum());
-            mContext->createBuffer(bi, tmp.IB);
-            mContext->writeBuffer(skeletalMesh_->getIndices().size() * sizeof(uint32_t), skeletalMesh_->getIndices().data(), tmp.IB);
+            bi.setIndexBuffer<uint32_t>(m.indices.size());
+            mContext->createBuffer(bi, ib);
+            mContext->writeBuffer(m.indices.size() * sizeof(uint32_t), m.indices.data(), ib);
         }
 
         //定数バッファ構築
@@ -522,9 +554,6 @@ namespace Lynx
             }
 
             {//ボーン
-                //注意 : いまのところおいとく
-                //BoneData data;
-
                 bi.setUniformBuffer<BoneData>();
                 mContext->createBuffer(bi, tmp.boneCB);
                 //mContext->writeBuffer(sizeof(BoneData), &data, tmp.boneCB);
@@ -563,6 +592,7 @@ namespace Lynx
         //         assert(!"failed to create geometry pipeline");
         // }
 
+        
         {//コマンド作成
 
             //シャドウパス
@@ -578,11 +608,15 @@ namespace Lynx
                 SubCommandList scl(mShadowPass);
                 scl.bind(mShadowPipeline);
 
-                scl.bind(tmp.VB, tmp.IB);
                 scl.bind(0, bufferSet);
-                scl.renderIndexed(skeletalMesh_->getIndexNum(), 1, 0, 0, 0);
+                assert(tmp.VBs.size() == tmp.IBs.size());
+                for(size_t i = 0; i < tmp.VBs.size(); ++i)
+                {
+                    scl.bind(tmp.VBs[i], tmp.IBs[i]);
+                    scl.renderIndexed(skeletalMesh_->getMeshes()[i].indices.size(), 1, 0, 0, 0);
+                }
 
-                HCommandBuffer cb;
+                //HCommandBuffer cb;
                 if(Cutlass::Result::eSuccess != mContext->createSubCommandBuffer(scl, tmp.shadowSubCB))
                     assert(!"failed to create command buffer!");
                 //mShadowSubs.emplace_back(cb);
@@ -603,19 +637,26 @@ namespace Lynx
                     bufferSet.bind(1, tmp.boneCB);
 
                     auto&& textures = material_->getTextures();
+                    
 
                     if(textures.empty())
                         textureSet.bind(0, mDebugTex);
                     else
-                        textureSet.bind(0, textures[0].handle);
+                        textureSet.bind(0, textures.back().handle);
                 }
 
                 SubCommandList scl(mGBuffer.renderPass);
                 scl.bind(mGeometryPipeline);
-                scl.bind(tmp.VB, tmp.IB);
                 scl.bind(0, bufferSet);
                 scl.bind(1, textureSet);
-                scl.renderIndexed(skeletalMesh_->getIndexNum(), 1, 0, 0, 0);
+                // scl.bind(tmp.VB, tmp.IB);
+                // scl.renderIndexed(mesh_->getIndexNum(), 1, 0, 0, 0);
+                assert(tmp.VBs.size() == tmp.IBs.size());
+                for(size_t i = 0; i < tmp.VBs.size(); ++i)
+                {
+                    scl.bind(tmp.VBs[i], tmp.IBs[i]);
+                    scl.renderIndexed(skeletalMesh_->getMeshes()[i].indices.size(), 1, 0, 0, 0);
+                }
 
                 HCommandBuffer cb;
                 if(Cutlass::Result::eSuccess != mContext->createSubCommandBuffer(scl, tmp.geometrySubCB))
@@ -623,7 +664,7 @@ namespace Lynx
                 //mGeometrySubs.emplace_back(cb);
             }
         }
-        
+
         //影コントロール実装時注意
         mShadowAdded = castShadow;
         mGeometryAdded = true;
@@ -744,8 +785,10 @@ namespace Lynx
                 // if(ri.material)
                 //     ri.material.reset();
 
-                mContext->destroyBuffer(ri.VB);
-                mContext->destroyBuffer(ri.IB);
+                for(auto& vb : ri.VBs)
+                    mContext->destroyBuffer(vb);
+                for(auto& ib : ri.IBs)
+                    mContext->destroyBuffer(ib);
                 mContext->destroyBuffer(ri.sceneCB);
                 mContext->destroyBuffer(ri.boneCB);
 
@@ -779,8 +822,10 @@ namespace Lynx
                 // if(ri.material)
                 //     ri.material.reset();
 
-                mContext->destroyBuffer(ri.VB);
-                mContext->destroyBuffer(ri.IB);
+                for(auto& vb : ri.VBs)
+                    mContext->destroyBuffer(vb);
+                for(auto& ib : ri.IBs)
+                    mContext->destroyBuffer(ib);
                 mContext->destroyBuffer(ri.sceneCB);
                 mContext->destroyBuffer(ri.boneCB);
 
@@ -841,8 +886,10 @@ namespace Lynx
             // if(ri.material)
             //     ri.material.reset();
 
-            mContext->destroyBuffer(ri.VB);
-            mContext->destroyBuffer(ri.IB);
+            for(auto& vb : ri.VBs)
+                mContext->destroyBuffer(vb);
+            for(auto& ib : ri.IBs)
+                mContext->destroyBuffer(ib);
             mContext->destroyBuffer(ri.sceneCB);
             mContext->destroyBuffer(ri.boneCB);
             // mContext->destroyGraphicsPipeline(ri.geometryPipeline);
@@ -868,43 +915,6 @@ namespace Lynx
         mGeometryAdded = false;
         mLightingAdded = false;
         mSpriteAdded = false;
-
-        // for(const auto& cb : mShadowSubs)
-        // {
-        //     mContext->destroyCommandBuffer(cb);
-        // }
-
-        // for(const auto& cb : mGeometrySubs)
-        // {
-        //     mContext->destroyCommandBuffer(cb);
-        // }
-
-        // for(const auto& cb : mLightingSubs)
-        // {
-        //     mContext->destroyCommandBuffer(cb);
-        // }
-
-        // for(const auto& cb : mForwardSubs)
-        // {
-        //     mContext->destroyCommandBuffer(cb);
-        // }
-
-        // for(const auto& cb : mPostEffectSubs)
-        // {
-        //     mContext->destroyCommandBuffer(cb);
-        // }
-
-        // for(const auto& cb : mSpriteSubs)
-        // {
-        //     mContext->destroyCommandBuffer(cb);
-        // }
-
-        // mShadowSubs.clear();
-        // mGeometrySubs.clear();
-        // //mLightingSubs.clear();
-        // mForwardSubs.clear();
-        // mPostEffectSubs.clear();
-        // mSpriteSubs.clear();
     }
 
     void Renderer::build()
@@ -962,18 +972,16 @@ namespace Lynx
                 Cutlass::BufferInfo bi;
                 bi.setVertexBuffer<SpriteComponent::Vertex>(4);
 
-                //float x, y, w, h;
-
                 glm::vec3 lu(0), ld(0), ru(0), rd(0);
                 float c, s;//cache of cosine, sine
 
-                //for(auto& si : mSpriteInfos)
                 mSpriteInfos.erase(std::remove_if(mSpriteInfos.begin(), mSpriteInfos.end(), 
                 [&](SpriteInfo& si)
                 {
                     if(si.sprite.expired())
                         return true;
 
+                    lu = ld = ru = rd = glm::vec3(0);
                     const auto& transform = si.sprite.lock()->getTransform();
                     const auto& scale = transform.getScale();
                     //const auto& rotAxis = transform.getRotAxis();
@@ -981,15 +989,6 @@ namespace Lynx
                     c = cos(rotAngle);
                     s = sin(rotAngle);
                     const auto& pos = transform.getPos();
-                    // x = pos.x;
-                    // y = pos.y;
-                    // w = si.size.x * scale.x;
-                    // h = si.size.y * scale.y;
-                    // if(si.sprite->getCenterFlag())
-                    // {
-                    //     x -= (w / 2.f);
-                    //     y -= (h / 2.f);
-                    // }
 
                     if(si.sprite.lock()->getCenterFlag())
                     {
@@ -1052,12 +1051,7 @@ namespace Lynx
                 for(uint32_t i = 0; i < MAX_LIGHT_NUM; ++i)
                 {
                     if(i >= mLights.size())
-                    {
-                        data[i].lightType = 0;
-                        data[i].lightColor = glm::vec4(0);
-                        data[i].lightDir = glm::vec3(0);
                         continue;
-                    }
                     
                     if(mLights[i].expired())
                         continue;
@@ -1066,17 +1060,18 @@ namespace Lynx
                     {
                         case LightComponent::LightType::eDirectionalLight:
                             data[i].lightType = 0;
+                            data[i].lightDir = mLights[i].lock()->getDirection();
                         break;
                         case LightComponent::LightType::ePointLight:
                             data[i].lightType = 1;
-                            assert(!"TODO");
+                            data[i].lightPos = mLights[i].lock()->getTransform().getPos();
+                            data[i].lightRange = mLights[i].lock()->getRange();
                         break;
                         default:
                             assert(!"invalid light type!");
                         break;
                     }
                     data[i].lightColor = mLights[i].lock()->getColor();
-                    data[i].lightDir = mLights[i].lock()->getDirection();
                 }
 
                 // std::cerr << sizeof(LightData) << "\n";
@@ -1118,7 +1113,6 @@ namespace Lynx
         }
 
         //サブコマンドバッファ積み込み
-        //if(0)
         if(mShadowAdded)
         {
             //std::cerr << "build shadow\n";
@@ -1151,6 +1145,7 @@ namespace Lynx
                     if(ri.mesh.expired() || !ri.mesh.lock()->getEnable() || !ri.mesh.lock()->getVisible())
                         continue;
                 }
+
                 cl.executeSubCommand(ri.geometrySubCB);
             }
             cl.end();

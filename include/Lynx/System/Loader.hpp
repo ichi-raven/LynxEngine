@@ -29,12 +29,6 @@ namespace Lynx
     {
     public:
 
-        struct Mesh 
-	    {
-            std::vector<MeshComponent::Vertex> vertices;
-            std::vector<uint32_t> indices;
-        };
-
         struct VertexBoneData
         {
             VertexBoneData()
@@ -80,7 +74,7 @@ namespace Lynx
         
         void processNode(const aiNode* node);
 
-        Mesh processMesh(const aiNode* node, const aiMesh* mesh);
+        MeshComponent::Mesh processMesh(const aiNode* node, const aiMesh* mesh);
 
         std::vector<MaterialComponent::Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
 
@@ -95,7 +89,7 @@ namespace Lynx
         std::string mDirectory;
         std::string mPath;
 
-        std::vector<Mesh> mMeshes;
+        std::vector<MeshComponent::Mesh> mMeshes;
         SkeletalMeshComponent::Skeleton mSkeleton;//単体前提
         std::vector<MaterialComponent::Texture> mTexturesLoaded;
 

@@ -24,7 +24,7 @@ namespace Lynx
  
         virtual ~LightComponent(){}
 
-        void setAsPointLight(const glm::vec4& color);
+        void setAsPointLight(const glm::vec4& color, float range);
 
         void setAsDirectionalLight(const glm::vec4& color, const glm::vec3& direction);
 
@@ -36,6 +36,7 @@ namespace Lynx
 
         const glm::vec4& getColor() const;
         const glm::vec3& getDirection() const;
+        const float getRange() const;
 
         //const std::optional<Cutlass::HBuffer>& getLightUB() const;
 
@@ -53,6 +54,7 @@ namespace Lynx
         
         glm::vec4 mColor;
         glm::vec3 mDirection;
+        float mRange;
 
         //std::optional<Cutlass::HBuffer> mUB;
     };

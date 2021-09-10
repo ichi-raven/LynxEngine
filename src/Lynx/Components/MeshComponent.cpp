@@ -49,15 +49,15 @@ namespace Lynx
         return mTransform;
     }
 
-    const uint32_t MeshComponent::getVertexNum() const
-    {
-        return mVertices.size();
-    }
+    // const uint32_t MeshComponent::getVertexNum() const
+    // {
+    //     return mVertices.size();
+    // }
 
-    const uint32_t MeshComponent::getIndexNum() const
-    {
-        return mIndices.size();
-    }
+    // const uint32_t MeshComponent::getIndexNum() const
+    // {
+    //     return mIndices.size();
+    // }
 
     // const Cutlass::HBuffer& MeshComponent::getVB() const
     // {
@@ -69,15 +69,20 @@ namespace Lynx
     //     return mIB;
     // }
 
-    const std::vector<MeshComponent::Vertex>& MeshComponent::getVertices() const
-    {
-        return mVertices;
-    }
+    // const std::vector<MeshComponent::Vertex>& MeshComponent::getVertices() const
+    // {
+    //     return mVertices;
+    // }
 
-    const std::vector<uint32_t>& MeshComponent::getIndices() const
+    // const std::vector<uint32_t>& MeshComponent::getIndices() const
+    // {
+    //     return mIndices;
+    // } 
+
+    const std::vector<MeshComponent::Mesh>& MeshComponent::getMeshes() const
     {
-        return mIndices;
-    } 
+        return mMeshes;
+    }
 
     void MeshComponent::update()
     {
@@ -85,34 +90,35 @@ namespace Lynx
         mTransform.update();
     }
 
-    void MeshComponent::setTopology(Cutlass::Topology topology)
-    {
-        mTopology = topology;
-    }
+    // void MeshComponent::setTopology(Cutlass::Topology topology)
+    // {
+    //     mTopology = topology;
+    // }
 
-    Cutlass::Topology MeshComponent::getTopology() const
-    {
-        return mTopology;
-    }
+    // Cutlass::Topology MeshComponent::getTopology() const
+    // {
+    //     return mTopology;
+    // }
     
-    void MeshComponent::setRasterizerState(const Cutlass::RasterizerState& rasterizerState)
-    {
-        mRasterizerState = rasterizerState;
-    }
+    // void MeshComponent::setRasterizerState(const Cutlass::RasterizerState& rasterizerState)
+    // {
+    //     mRasterizerState = rasterizerState;
+    // }
 
-    const Cutlass::RasterizerState& MeshComponent::getRasterizerState() const
-    {
-        return mRasterizerState;
-    }
+    // const Cutlass::RasterizerState& MeshComponent::getRasterizerState() const
+    // {
+    //     return mRasterizerState;
+    // }
 
     void MeshComponent::create(const std::vector<MeshComponent::Vertex>& vertices, const std::vector<uint32_t>& indices)
     {
         //auto& context = getContext();
         mVisible = mEnabled = true;
 
-        mVertices = vertices;
-
-        mIndices = indices;
+        mMeshes.resize(1);
+        auto& mesh = mMeshes.back();
+        mesh.vertices = vertices;
+        mesh.indices = indices;
 
         // {//頂点バッファ構築
         //     Cutlass::BufferInfo bi;
@@ -127,6 +133,12 @@ namespace Lynx
         //     context->createBuffer(bi, mIB);
         //     context->writeBuffer(mIndices.size() * sizeof(decltype(mIndices[0])), mIndices.data(), mIB);
         // }
+    }
+
+    void MeshComponent::create(const std::vector<Mesh>& meshes)
+    {
+        mVisible = mEnabled = true;
+        mMeshes = meshes;
     }
 
     void MeshComponent::createCube(const double& edgeLength)
@@ -156,10 +168,13 @@ namespace Lynx
         constexpr glm::vec3 nu(0, 1.f, 0);
         constexpr glm::vec3 nd(0, -1.f, 0);
 
-        mVertices.resize(24);
-        mIndices.resize(36);
+        mMeshes.resize(1);
+        auto& mesh = mMeshes.back();
 
-        mVertices = 
+        mesh.vertices.resize(24);
+        mesh.indices.resize(36);
+
+        mesh.vertices = 
         {
             // 正面
             {glm::vec3(-edgeLength, edgeLength, edgeLength), nf, lb, zero, zero},
@@ -193,7 +208,7 @@ namespace Lynx
             {glm::vec3(edgeLength, -edgeLength, -edgeLength), nd, rt, zero, zero},
         };
 
-        mIndices =
+        mesh.indices =
         {
             0, 2, 1, 1, 2, 3,    // front
             4, 6, 5, 5, 6, 7,    // right
@@ -209,8 +224,8 @@ namespace Lynx
     void MeshComponent::createPlane(const double& xSize, const double& zSize)
     {
         mVisible = mEnabled = true;
-        mRasterizerState.cullMode = Cutlass::CullMode::eNone;
-        mRasterizerState.frontFace = Cutlass::FrontFace::eCounterClockwise;
+        // mRasterizerState.cullMode = Cutlass::CullMode::eNone;
+        // mRasterizerState.frontFace = Cutlass::FrontFace::eCounterClockwise;
 
         constexpr glm::vec3 nu(0, -1.f, 0);
         constexpr glm::vec2 lb(0.0f, 0.0f);
@@ -225,10 +240,13 @@ namespace Lynx
         // constexpr glm::vec4 blue(0.0f, 0.0f, 1.0f, 1.f);
         // constexpr glm::vec4 yellow(1.0f, 1.0f, 0.0f, 1.f);
 
-        mVertices.resize(4);
-        mIndices.resize(6);
+        mMeshes.resize(1);
+        auto& mesh = mMeshes.back();
 
-        mVertices = 
+        mesh.vertices.resize(4);
+        mesh.indices.resize(6);
+
+        mesh.vertices = 
         {
             {glm::vec3(-xSize, 0, zSize), nu, lb, zero, zero},
             {glm::vec3(-xSize, 0, -zSize), nu, lt, zero, zero},
@@ -236,7 +254,7 @@ namespace Lynx
             {glm::vec3(xSize, 0, -zSize), nu, rt, zero, zero}
         };
 
-        mIndices = 
+        mesh.indices = 
         {
             0, 2, 1, 1, 2, 3
         };

@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include <vector>
+#include <memory>
 
 #include "../Actors/IActor.hpp"
 
@@ -96,9 +97,21 @@ namespace Lynx
         #define MAX_LIGHT_NUM (16)
         struct LightData
         {
-            uint32_t lightType;
-            glm::vec3 lightDir;
-            glm::vec4 lightColor;
+            LightData()
+            : lightType(0)
+            , lightDir(glm::vec3(0, 0, 0))
+            , lightColor(glm::vec4(0, 0, 0, 1.f))
+            , lightPos(glm::vec3(0, 0, 0))
+            , lightRange(0)
+            {
+
+            }
+            //for packing
+            glm::vec3   lightDir;
+            uint32_t    lightType;
+            glm::vec4   lightColor;
+            glm::vec3   lightPos;
+            float       lightRange;
         };
 
         struct ShadowData
@@ -129,14 +142,11 @@ namespace Lynx
             std::weak_ptr<SkeletalMeshComponent> skeletalMesh;
             std::weak_ptr<MaterialComponent> material;
 
-            Cutlass::HBuffer VB;
-            Cutlass::HBuffer IB;
+            std::vector<Cutlass::HBuffer> VBs;
+            std::vector<Cutlass::HBuffer> IBs;
 
             Cutlass::HBuffer sceneCB;
             Cutlass::HBuffer boneCB;
-            
-            //Cutlass::HGraphicsPipeline geometryPipeline;
-            //Cutlass::HGraphicsPipeline shadowPipeline;
 
             Cutlass::HCommandBuffer shadowSubCB;
             Cutlass::HCommandBuffer geometrySubCB;
@@ -202,14 +212,6 @@ namespace Lynx
         Cutlass::HCommandBuffer mPostEffectCB;
         Cutlass::HCommandBuffer mSpriteCB;
         std::vector<Cutlass::HCommandBuffer> mPresentCBs;
-
-        //サブコマンドバッファ
-        //std::vector<Cutlass::HCommandBuffer> mShadowSubs;
-        //std::vector<Cutlass::HCommandBuffer> mGeometrySubs;
-        // std::vector<Cutlass::HCommandBuffer> mLightingSubs;
-        // std::vector<Cutlass::HCommandBuffer> mForwardSubs;
-        // std::vector<Cutlass::HCommandBuffer> mPostEffectSubs;
-        // std::vector<Cutlass::HCommandBuffer> mSpriteSubs;
  
         bool mShadowAdded;
         bool mGeometryAdded;
