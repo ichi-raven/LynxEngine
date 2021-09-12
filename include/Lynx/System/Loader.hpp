@@ -96,7 +96,7 @@ namespace Lynx
         uint32_t mBoneNum;
 
         Assimp::Importer mImporter;
-        std::shared_ptr<const aiScene> mScene;
-              
+        //std::shared_ptr<const aiScene> mScene;
+        std::vector<std::shared_ptr<const aiScene>> mScenes;
     };
 }

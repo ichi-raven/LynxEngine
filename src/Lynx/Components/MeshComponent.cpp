@@ -119,20 +119,6 @@ namespace Lynx
         auto& mesh = mMeshes.back();
         mesh.vertices = vertices;
         mesh.indices = indices;
-
-        // {//頂点バッファ構築
-        //     Cutlass::BufferInfo bi;
-        //     bi.setVertexBuffer<Vertex>(mVertices.size());
-        //     context->createBuffer(bi, mVB);
-        //     context->writeBuffer(mVertices.size() * sizeof(decltype(mVertices[0])), mVertices.data(), mVB);
-        // }
-
-        // {//インデックスバッファ構築
-        //     Cutlass::BufferInfo bi;
-        //     bi.setIndexBuffer<uint32_t>(mIndices.size());
-        //     context->createBuffer(bi, mIB);
-        //     context->writeBuffer(mIndices.size() * sizeof(decltype(mIndices[0])), mIndices.data(), mIB);
-        // }
     }
 
     void MeshComponent::create(const std::vector<Mesh>& meshes)
@@ -146,15 +132,6 @@ namespace Lynx
         mVisible = mEnabled = true;
 
         constexpr glm::vec4 zero = glm::vec4(0, 0, 0, 0);
-
-        // constexpr glm::vec4 red(1.0f, 0.0f, 0.0f, 1.f);
-        // constexpr glm::vec4 green(0.0f, 1.0f, 0.0f, 1.f);
-        // constexpr glm::vec4 blue(0.0f, 0.0f, 1.0f, 1.f);
-        // constexpr glm::vec4 white(1.0f);
-        // constexpr glm::vec4 black(0.0f);
-        // constexpr glm::vec4 yellow(1.0f, 1.0f, 0.0f, 1.f);
-        // constexpr glm::vec4 magenta(1.0f, 0.0f, 1.0f, 1.f);
-        // constexpr glm::vec4 cyan(0.0f, 1.0f, 1.0f, 1.f);
 
         constexpr glm::vec2 lb(0.0f, 0.0f);
         constexpr glm::vec2 lt(0.0f, 1.0f);

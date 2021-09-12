@@ -31,8 +31,8 @@ namespace Lynx
     SoundComponent::~SoundComponent()
     {
         --instanceCount;
-        if(!instanceCount)
-            Pa_Terminate();
+        // if(!instanceCount)
+        //     Pa_Terminate();
     }
 
     void SoundComponent::setVolumeRate(float rate)
@@ -76,11 +76,6 @@ namespace Lynx
     {
         return mLoopFlag;
     }
-
-    // std::weak_ptr<PaStream> SoundComponent::getStream()
-    // {
-    //     return mStream;
-    // }
 
     double SoundComponent::getPlayingTime() const
     {

@@ -54,7 +54,6 @@ VSOutput VSMain(VSInput input)
 		skinnedPos = mul(boneAll, float4(input.pos.xyz, 1.0f));
 	}
 	
-
 	output.pos = mul(mul(lightViewProj, world), skinnedPos);
 
 	return output;

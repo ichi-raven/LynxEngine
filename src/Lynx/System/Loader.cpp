@@ -126,13 +126,18 @@ namespace Lynx
             return;
         }
 
+        mLoaded = true;
         mSkeletal = false;
 
         mPath = std::string(modelPath);
 
-        mScene = std::shared_ptr<const aiScene>(mImporter.ReadFile(modelPath, aiProcess_Triangulate | aiProcess_FlipUVs));
+        
+        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
+        auto&& scene = mScenes.emplace_back();
 
-        if(!mScene || mScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !mScene->mRootNode) 
+        scene = std::shared_ptr<const aiScene>(mImporter.ReadFile(modelPath, aiProcess_Triangulate | aiProcess_FlipUVs));
+
+        if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) 
         {
             std::cerr << "ERROR::ASSIMP::" << mImporter.GetErrorString() << "\n";
             assert(0);
@@ -141,10 +146,10 @@ namespace Lynx
 
         mDirectory = mPath.substr(0, mPath.find_last_of("/\\"));
 
-        // mSkeleton.setGlobalInverse(glm::inverse(convert4x4(mScene->mRootNode->mTransformation)));
-        // mSkeleton.setAIScene(mScene);
+        // mSkeleton.setGlobalInverse(glm::inverse(convert4x4(scene->mRootNode->mTransformation)));
+        // mSkeleton.setAIScene(scene);
 
-        processNode(mScene->mRootNode);
+        processNode(scene->mRootNode);
 
         //assert(0);
 
@@ -164,8 +169,8 @@ namespace Lynx
 
         //     vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
         //     indices.insert(indices.end(), mesh.indices.begin(), mesh.indices.end());
-        //     //std::copy(mesh.vertices.begin(), mesh.vertices.end(), std::back_inserter(vertices));
-        //     //std::copy(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices));
+        //     std::copy(mesh.vertices.begin(), mesh.vertices.end(), std::back_inserter(vertices));
+        //     std::copy(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices));
         //     checkSumV += mesh.vertices.size();
         //     checkSumI += mesh.indices.size();
         // }
@@ -177,9 +182,10 @@ namespace Lynx
         //mesh_out.lock()->setRasterizerState(Cutlass::RasterizerState(Cutlass::PolygonMode::eFill, Cutlass::CullMode::eBack, Cutlass::FrontFace::eCounterClockwise));
         mesh_out.lock()->create(mMeshes);
 
+        material_out.lock()->clearTextures();
         material_out.lock()->addTextures(mTexturesLoaded);
 
-        //unload();
+        unload();
     }
 
     //Skeletal
@@ -196,13 +202,17 @@ namespace Lynx
             return;
         }
 
+        mLoaded = true;
         mSkeletal = true;
 
         mPath = std::string(modelPath);
 
-        mScene = std::shared_ptr<const aiScene>(mImporter.ReadFile(modelPath, aiProcess_Triangulate | aiProcess_FlipUVs));
+        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
+        auto&& scene = mScenes.emplace_back();
 
-        if(!mScene || mScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !mScene->mRootNode) 
+        scene = std::shared_ptr<const aiScene>(mImporter.ReadFile(modelPath, aiProcess_Triangulate | aiProcess_FlipUVs));
+
+        if(!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) 
         {
             std::cerr << "ERROR::ASSIMP::" << mImporter.GetErrorString() << "\n";
             assert(0);
@@ -211,10 +221,10 @@ namespace Lynx
 
         mDirectory = mPath.substr(0, mPath.find_last_of("/\\"));
 
-        mSkeleton.setGlobalInverse(glm::inverse(convert4x4(mScene->mRootNode->mTransformation)));
-	    mSkeleton.setAIScene(mScene);
+        mSkeleton.setGlobalInverse(glm::inverse(convert4x4(scene->mRootNode->mTransformation)));
+	    mSkeleton.setAIScene(scene);
 
-        processNode(mScene->mRootNode);
+        processNode(scene->mRootNode);
 
         std::cerr << "bone num : " << mBoneNum << "\n";
         //assert(0);
@@ -242,9 +252,12 @@ namespace Lynx
 
     void Loader::processNode(const aiNode* node)
     {
+        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
+        auto& scene = mScenes.back();
+
         for (uint32_t i = 0; i < node->mNumMeshes; i++)
         {
-            aiMesh* mesh = mScene->mMeshes[node->mMeshes[i]];
+            aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
             if(mesh)
                 mMeshes.emplace_back(processMesh(node, mesh));
         }
@@ -258,6 +271,9 @@ namespace Lynx
 
     MeshComponent::Mesh Loader::processMesh(const aiNode* node, const aiMesh* mesh)
     {
+        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
+        auto& scene = mScenes.back();
+
         std::cerr << "start process mesh\n";
         // Data to fill
         std::vector<MeshComponent::Vertex> vertices;
@@ -325,9 +341,9 @@ namespace Lynx
 
         std::cerr << "indices\n";
 
-        if (mesh->mMaterialIndex >= 0 && mesh->mMaterialIndex < mScene->mNumMaterials) 
+        if (mesh->mMaterialIndex >= 0 && mesh->mMaterialIndex < scene->mNumMaterials) 
         {
-            aiMaterial* material = mScene->mMaterials[mesh->mMaterialIndex];
+            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
             std::vector<MaterialComponent::Texture> diffuseMaps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
         }
@@ -398,6 +414,9 @@ namespace Lynx
     //from sample
     std::vector<MaterialComponent::Texture> Loader::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
     {
+        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
+        auto& scene = mScenes.back();
+
         std::vector<MaterialComponent::Texture> textures;
         for (uint32_t i = 0; i < mat->GetTextureCount(type); i++) 
         {
@@ -417,7 +436,7 @@ namespace Lynx
             {   // If texture hasn't been loaded already, load it
                 MaterialComponent::Texture texture;
 
-                const aiTexture* embeddedTexture = mScene->GetEmbeddedTexture(str.C_Str());
+                const aiTexture* embeddedTexture = scene->GetEmbeddedTexture(str.C_Str());
                 if (embeddedTexture != nullptr) 
                 {
                     Cutlass::TextureInfo ti;

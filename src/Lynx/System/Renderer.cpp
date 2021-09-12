@@ -1097,10 +1097,23 @@ namespace Lynx
                 else
                 {
                     ShadowData data;
-                    glm::vec3 invDir = mLights[0].lock()->getDirection() * -10.f;
+                    glm::vec3 invDir;
+                    switch(mLights[0].lock()->getType())
+                    {
+                        case LightComponent::LightType::eDirectionalLight:
+                            invDir = mLights[0].lock()->getDirection() * -10.f;
+                        break;
+                        case LightComponent::LightType::ePointLight:
+                            invDir = mLights[0].lock()->getTransform().getPos() * -10.f;
+                        break;
+                        default:
+                            assert(!"invalid light param type!");
+                        break;
+                    }
+
                     auto view = glm::lookAtRH(invDir, glm::vec3(0, 0, 0), glm::vec3(0, 1.f, 0));
                     auto proj = glm::perspective(glm::radians(60.f), 1.f * mMaxWidth / mMaxHeight, 1.f, 1000.f);
-                    //auto proj = glm::ortho(-10.f, 10.0f, -5.0f, 30.0f, 0.5f, 50.0f);
+
                     proj[1][1] *= -1;
                     auto&& matBias =  glm::translate(glm::mat4(1.0f), glm::vec3(0.5f,0.5f,0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f));
                     data.lightViewProj = proj * view;
@@ -1125,7 +1138,7 @@ namespace Lynx
             mContext->updateCommandBuffer(cl, mShadowCB);
             mShadowAdded = false;
         }
-        if(mGeometryAdded)
+        if(true)
         {
             //std::cerr << "build geom\n";
             CommandList cl;
@@ -1194,13 +1207,14 @@ namespace Lynx
        // std::cerr << "render start\n";
         if(!mRenderInfos.empty())
         {
-            mContext->execute(mShadowCB);
             //std::cerr << "shadow\n";
         }
-            mContext->execute(mGeometryCB);
-            //std::cerr << "geom\n";
-            mContext->execute(mLightingCB);
-            //std::cerr << "light\n";
+            mContext->execute(mShadowCB);
+
+        mContext->execute(mGeometryCB);
+        //std::cerr << "geom\n";
+        mContext->execute(mLightingCB);
+        //std::cerr << "light\n";
         
 
         //mContext->execute(mForwardCB);

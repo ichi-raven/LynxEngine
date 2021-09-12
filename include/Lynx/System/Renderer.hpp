@@ -36,7 +36,7 @@ namespace Lynx
 
         virtual void add(const std::weak_ptr<MeshComponent>& mesh, const std::weak_ptr<MaterialComponent>& material, bool castShadow = true, bool receiveShadow = true, bool lighting = true);
         virtual void add(const std::weak_ptr<MeshComponent>& mesh, const std::weak_ptr<CustomMaterialComponent>& material);
-        virtual void add(const std::weak_ptr<SkeletalMeshComponent>& skeletalMesh, const std::weak_ptr<MaterialComponent>& material, bool castShadow = true, bool receiveShadow = false, bool lighting = true);
+        virtual void add(const std::weak_ptr<SkeletalMeshComponent>& skeletalMesh, const std::weak_ptr<MaterialComponent>& material, bool castShadow = true, bool receiveShadow = true, bool lighting = true);
         virtual void add(const std::weak_ptr<SpriteComponent>& sprite);
         virtual void add(const std::weak_ptr<LightComponent>& light);
 
