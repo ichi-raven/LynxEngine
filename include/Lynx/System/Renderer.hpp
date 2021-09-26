@@ -145,8 +145,12 @@ namespace Lynx
             std::vector<Cutlass::HBuffer> VBs;
             std::vector<Cutlass::HBuffer> IBs;
 
-            Cutlass::HBuffer sceneCB;
-            Cutlass::HBuffer boneCB;
+            Cutlass::HBuffer sceneUB;
+            Cutlass::HBuffer boneUB;
+            Cutlass::HBuffer shadowUB;
+
+            Cutlass::HGraphicsPipeline shadowPipeline;
+            Cutlass::HGraphicsPipeline geometryPipeline;
 
             Cutlass::HCommandBuffer shadowSubCB;
             Cutlass::HCommandBuffer geometrySubCB;
@@ -186,7 +190,7 @@ namespace Lynx
         Cutlass::HRenderPass mShadowPass;
         Cutlass::HTexture mShadowMap;
         Cutlass::HBuffer mShadowUB;
-        Cutlass::HGraphicsPipeline mShadowPipeline;
+        //Cutlass::HGraphicsPipeline mShadowPipeline;
     
         Cutlass::HRenderPass mLightingPass;
         Cutlass::HGraphicsPipeline mLightingPipeline;
@@ -196,7 +200,7 @@ namespace Lynx
         std::vector<std::weak_ptr<LightComponent>> mLights;
         Cutlass::HBuffer mLightUB;
 
-        Cutlass::HGraphicsPipeline mGeometryPipeline;
+        //Cutlass::HGraphicsPipeline mGeometryPipeline;
         std::vector<RenderInfo> mRenderInfos;
 
         Cutlass::HRenderPass mSpritePass;

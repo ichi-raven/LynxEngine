@@ -2,6 +2,8 @@
 
 #include <Lynx/Resources/Resources.hpp>
 
+#include <algorithm>
+
 namespace Lynx
 {
     MaterialComponent::MaterialComponent()

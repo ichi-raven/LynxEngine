@@ -93,20 +93,20 @@ namespace Lynx
                 assert(!"failed to create G-Buffer renderpass!");
             }
 
-            {
-                GraphicsPipelineInfo gpi
-                (
-                    mDefferedSkinVS,
-                    mDefferedSkinFS,
-                    mGBuffer.renderPass,
-                    DepthStencilState::eDepth,
-                    RasterizerState(PolygonMode::eFill, CullMode::eBack, FrontFace::eCounterClockwise),
-                    Topology::eTriangleList
-                );
+            // {
+            //     GraphicsPipelineInfo gpi
+            //     (
+            //         mDefferedSkinVS,
+            //         mDefferedSkinFS,
+            //         mGBuffer.renderPass,
+            //         DepthStencilState::eDepth,
+            //         RasterizerState(PolygonMode::eFill, CullMode::eBack, FrontFace::eCounterClockwise),
+            //         Topology::eTriangleList
+            //     );
         
-                if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, mGeometryPipeline))
-                    assert(!"failed to create geometry pipeline");
-            }
+            //     if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, mGeometryPipeline))
+            //         assert(!"failed to create geometry pipeline");
+            // }
         }
 
         for(const auto& hw : hwindows)
@@ -239,21 +239,21 @@ namespace Lynx
             if(Result::eSuccess != mContext->createBuffer(bi, mShadowUB))
                 assert(!"failed to create shadow UB!");
 
-            {
+            // {
             
-                GraphicsPipelineInfo gpi
-                (
-                    mShadowVS,
-                    mShadowFS,
-                    mShadowPass,
-                    DepthStencilState::eDepth,
-                    RasterizerState(PolygonMode::eFill, CullMode::eNone, FrontFace::eCounterClockwise),
-                    Topology::eTriangleList
-                );
+            //     GraphicsPipelineInfo gpi
+            //     (
+            //         mShadowVS,
+            //         mShadowFS,
+            //         mShadowPass,
+            //         DepthStencilState::eDepth,
+            //         RasterizerState(PolygonMode::eFill, CullMode::eNone, FrontFace::eCounterClockwise),
+            //         Topology::eTriangleList
+            //     );
 
-                if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, mShadowPipeline))
-                    assert(!"failed to create shadow pipeline");
-            }
+            //     if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, mShadowPipeline))
+            //         assert(!"failed to create shadow pipeline");
+            // }
 
         }
 
@@ -357,37 +357,39 @@ namespace Lynx
         tmp.mesh = mesh;
         tmp.material = material;
 
-        // if(castShadow)
-        // {//シャドウマップ用パス
+        if(castShadow)
+        {//シャドウマップ用パス
         
-        //     GraphicsPipelineInfo gpi
-        //     (
-        //         mShadowVS,
-        //         mShadowFS,
-        //         mShadowPass,
-        //         DepthStencilState::eDepth,
-        //         mesh->getRasterizerState(),
-        //         mesh->getTopology()
-        //     );
+            GraphicsPipelineInfo gpi
+            (
+                mShadowVS,
+                mShadowFS,
+                mShadowPass,
+                DepthStencilState::eDepth,
+                mesh_->getRasterizerState(),
+                mesh_->getTopology()
+            );
 
-        //     if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, tmp.shadowPipeline))
-        //         assert(!"failed to create shadow pipeline");
-        // }
+            if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, tmp.shadowPipeline))
+                assert(!"failed to create shadow pipeline");
+        }
 
-        // {
-        //     GraphicsPipelineInfo gpi
-        //     (
-        //         mDefferedSkinVS,
-        //         mDefferedSkinFS,
-        //         mGBuffer.renderPass,
-        //         DepthStencilState::eDepth,
-        //         mesh->getRasterizerState(),
-        //         mesh->getTopology()
-        //     );
+        {
+            GraphicsPipelineInfo gpi
+            (
+                mDefferedSkinVS,
+                mDefferedSkinFS,
+                mGBuffer.renderPass,
+                DepthStencilState::eDepth,
+                mesh_->getRasterizerState(),
+                mesh_->getTopology()
+            );
     
-        //     if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, tmp.geometryPipeline))
-        //         assert(!"failed to create geometry pipeline");
-        // }
+            if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, tmp.geometryPipeline))
+                assert(!"failed to create geometry pipeline");
+        }
+
+        std::cerr << "1\n";
 
         //頂点バッファ、インデックスバッファ構築
         for(const auto& m : mesh_->getMeshes())
@@ -410,7 +412,7 @@ namespace Lynx
             Cutlass::BufferInfo bi;
             {//WVP
                 bi.setUniformBuffer<SceneData>();
-                mContext->createBuffer(bi, tmp.sceneCB);
+                mContext->createBuffer(bi, tmp.sceneUB);
             }
 
             {//ボーン
@@ -418,8 +420,13 @@ namespace Lynx
                 BoneData data;
 
                 bi.setUniformBuffer<BoneData>();
-                mContext->createBuffer(bi, tmp.boneCB);
-                mContext->writeBuffer(sizeof(BoneData), &data, tmp.boneCB);
+                mContext->createBuffer(bi, tmp.boneUB);
+                mContext->writeBuffer(sizeof(BoneData), &data, tmp.boneUB);
+            }
+
+            {
+                bi.setUniformBuffer<ShadowData>();
+                mContext->createBuffer(bi, tmp.shadowUB);
             }
 
         }
@@ -431,13 +438,13 @@ namespace Lynx
             {
                 ShaderResourceSet bufferSet;
                 {
-                    bufferSet.bind(0, tmp.sceneCB);
-                    bufferSet.bind(1, mShadowUB);
-                    bufferSet.bind(2, tmp.boneCB);
+                    bufferSet.bind(0, tmp.sceneUB);
+                    bufferSet.bind(1, tmp.shadowUB);
+                    bufferSet.bind(2, tmp.boneUB);
                 }
 
                 SubCommandList scl(mShadowPass);
-                scl.bind(mShadowPipeline);
+                scl.bind(tmp.shadowPipeline);
 
                 scl.bind(0, bufferSet);
                 assert(tmp.VBs.size() == tmp.IBs.size());
@@ -458,14 +465,14 @@ namespace Lynx
                 ShaderResourceSet bufferSet;
                 ShaderResourceSet textureSet;
                 {
-                    bufferSet.bind(0, tmp.sceneCB);
+                    bufferSet.bind(0, tmp.sceneUB);
                     // if(!material->getMaterialSets().empty())
                     //     bufferSet.bind(1, material->getMaterialSets().back().paramBuffer);
                     // else
                     // {
                     //     //マテリアル読む
                     // }
-                    bufferSet.bind(1, tmp.boneCB);
+                    bufferSet.bind(1, tmp.boneUB);
 
                     auto&& textures = material_->getTextures();
 
@@ -476,7 +483,7 @@ namespace Lynx
                 }
 
                 SubCommandList scl(mGBuffer.renderPass);
-                scl.bind(mGeometryPipeline);
+                scl.bind(tmp.geometryPipeline);
                 scl.bind(0, bufferSet);
                 scl.bind(1, textureSet);
 
@@ -550,47 +557,51 @@ namespace Lynx
             Cutlass::BufferInfo bi;
             {//WVP
                 bi.setUniformBuffer<SceneData>();
-                mContext->createBuffer(bi, tmp.sceneCB);
+                mContext->createBuffer(bi, tmp.sceneUB);
             }
 
             {//ボーン
                 bi.setUniformBuffer<BoneData>();
-                mContext->createBuffer(bi, tmp.boneCB);
-                //mContext->writeBuffer(sizeof(BoneData), &data, tmp.boneCB);
+                mContext->createBuffer(bi, tmp.boneUB);
+                //mContext->writeBuffer(sizeof(BoneData), &data, tmp.boneUB);
             }
 
+            {
+                bi.setUniformBuffer<ShadowData>();
+                mContext->createBuffer(bi, tmp.shadowUB);
+            }
         }
 
-        // if(castShadow)
-        // {//シャドウマップ用パス
-        //     GraphicsPipelineInfo gpi
-        //     (
-        //         mShadowVS,
-        //         mShadowFS,
-        //         mShadowPass,
-        //         DepthStencilState::eDepth,
-        //         skeletalMesh->getRasterizerState(),
-        //         skeletalMesh->getTopology()
-        //     );
+        if(castShadow)
+        {//シャドウマップ用パス
+            GraphicsPipelineInfo gpi
+            (
+                mShadowVS,
+                mShadowFS,
+                mShadowPass,
+                DepthStencilState::eDepth,
+                skeletalMesh_->getRasterizerState(),
+                skeletalMesh_->getTopology()
+            );
 
-        //     if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, mShadowPipeline))
-        //         assert(!"failed to create shadow pipeline");
-        // }
+            if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, tmp.shadowPipeline))
+                assert(!"failed to create shadow pipeline");
+        }
 
-        // {
-        //     GraphicsPipelineInfo gpi
-        //     (
-        //         mDefferedSkinVS,
-        //         mDefferedSkinFS,
-        //         mGBuffer.renderPass,
-        //         DepthStencilState::eDepth,
-        //         skeletalMesh->getRasterizerState(),
-        //         skeletalMesh->getTopology()
-        //     );
+        {
+            GraphicsPipelineInfo gpi
+            (
+                mDefferedSkinVS,
+                mDefferedSkinFS,
+                mGBuffer.renderPass,
+                DepthStencilState::eDepth,
+                skeletalMesh_->getRasterizerState(),
+                skeletalMesh_->getTopology()
+            );
     
-        //     if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, mGeometryPipeline))
-        //         assert(!"failed to create geometry pipeline");
-        // }
+            if(Cutlass::Result::eSuccess != mContext->createGraphicsPipeline(gpi, tmp.geometryPipeline))
+                assert(!"failed to create geometry pipeline");
+        }
 
         
         {//コマンド作成
@@ -600,13 +611,13 @@ namespace Lynx
             {
                 ShaderResourceSet bufferSet;
                 {
-                    bufferSet.bind(0, tmp.sceneCB);
-                    bufferSet.bind(1, mShadowUB);
-                    bufferSet.bind(2, tmp.boneCB);
+                    bufferSet.bind(0, tmp.sceneUB);
+                    bufferSet.bind(1, tmp.shadowUB);
+                    bufferSet.bind(2, tmp.boneUB);
                 }
 
                 SubCommandList scl(mShadowPass);
-                scl.bind(mShadowPipeline);
+                scl.bind(tmp.shadowPipeline);
 
                 scl.bind(0, bufferSet);
                 assert(tmp.VBs.size() == tmp.IBs.size());
@@ -627,18 +638,17 @@ namespace Lynx
                 ShaderResourceSet bufferSet;
                 ShaderResourceSet textureSet;
                 {
-                    bufferSet.bind(0, tmp.sceneCB);
+                    bufferSet.bind(0, tmp.sceneUB);
                     // if(!material->getMaterialSets().empty())
                     //     bufferSet.bind(1, material->getMaterialSets().back().paramBuffer);
                     // else
                     // {
                     //     //マテリアル読む
                     // }
-                    bufferSet.bind(1, tmp.boneCB);
+                    bufferSet.bind(1, tmp.boneUB);
 
                     auto&& textures = material_->getTextures();
                     
-
                     if(textures.empty())
                         textureSet.bind(0, mDebugTex);
                     else
@@ -646,7 +656,7 @@ namespace Lynx
                 }
 
                 SubCommandList scl(mGBuffer.renderPass);
-                scl.bind(mGeometryPipeline);
+                scl.bind(tmp.geometryPipeline);
                 scl.bind(0, bufferSet);
                 scl.bind(1, textureSet);
                 // scl.bind(tmp.VB, tmp.IB);
@@ -789,8 +799,9 @@ namespace Lynx
                     mContext->destroyBuffer(vb);
                 for(auto& ib : ri.IBs)
                     mContext->destroyBuffer(ib);
-                mContext->destroyBuffer(ri.sceneCB);
-                mContext->destroyBuffer(ri.boneCB);
+                mContext->destroyBuffer(ri.sceneUB);
+                mContext->destroyBuffer(ri.shadowUB);
+                mContext->destroyBuffer(ri.boneUB);
 
                 mContext->destroyCommandBuffer(ri.shadowSubCB);
                 mContext->destroyCommandBuffer(ri.geometrySubCB);
@@ -826,8 +837,9 @@ namespace Lynx
                     mContext->destroyBuffer(vb);
                 for(auto& ib : ri.IBs)
                     mContext->destroyBuffer(ib);
-                mContext->destroyBuffer(ri.sceneCB);
-                mContext->destroyBuffer(ri.boneCB);
+                mContext->destroyBuffer(ri.sceneUB);
+                mContext->destroyBuffer(ri.shadowUB);
+                mContext->destroyBuffer(ri.boneUB);
 
                 mContext->destroyCommandBuffer(ri.shadowSubCB);
                 mContext->destroyCommandBuffer(ri.geometrySubCB);
@@ -890,8 +902,9 @@ namespace Lynx
                 mContext->destroyBuffer(vb);
             for(auto& ib : ri.IBs)
                 mContext->destroyBuffer(ib);
-            mContext->destroyBuffer(ri.sceneCB);
-            mContext->destroyBuffer(ri.boneCB);
+            mContext->destroyBuffer(ri.sceneUB);
+            mContext->destroyBuffer(ri.shadowUB);
+            mContext->destroyBuffer(ri.boneUB);
             // mContext->destroyGraphicsPipeline(ri.geometryPipeline);
             // mContext->destroyGraphicsPipeline(ri.shadowPipeline);
 
@@ -941,30 +954,61 @@ namespace Lynx
                     return true;
                 
                 //ジオメトリ固有パラメータセット
-                sceneData.world = ri.mesh.lock()->getTransform().getWorldMatrix();
-                sceneData.receiveShadow = ri.receiveShadow ? 1.f : 0;
-                sceneData.lighting = ri.lighting ? 1.f : 0;
-                mContext->writeBuffer(sizeof(SceneData), &sceneData, ri.sceneCB);
+                {
+                    sceneData.world = ri.mesh.lock()->getTransform().getWorldMatrix();
+                    sceneData.receiveShadow = ri.receiveShadow ? 1.f : 0;
+                    sceneData.lighting = ri.lighting ? 1.f : 0;
+                    mContext->writeBuffer(sizeof(SceneData), &sceneData, ri.sceneUB);
+                }
+
+                {
+                    ShadowData data;
+                    glm::mat4 view;
+                    auto& transform = ri.skeletal ? ri.skeletalMesh.lock()->getTransform() : ri.mesh.lock()->getTransform();
+                    switch(mLights[0].lock()->getType())
+                    {
+                        case LightComponent::LightType::eDirectionalLight:
+                            view = glm::lookAtRH(mLights[0].lock()->getDirection() * -10.f, glm::vec3(0, 0, 0), glm::vec3(0, 1.f, 0));
+                        break;
+                        case LightComponent::LightType::ePointLight:
+                            view = glm::lookAtRH(mLights[0].lock()->getTransform().getPos(), transform.getPos(), glm::vec3(0, 1.f, 0));
+                        break;
+                        default:
+                            assert(!"invalid light param type!");
+                        break;
+                    }
+
+                    auto&& proj = glm::perspective(glm::radians(60.f), 1.f * mMaxWidth / mMaxHeight, 1.f, 1000.f);
+
+                    proj[1][1] *= -1;
+                    auto&& matBias =  glm::translate(glm::mat4(1.0f), glm::vec3(0.5f,0.5f,0.5f)) * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f));
+                    data.lightViewProj = proj * view;
+                    data.lightViewProjBias = matBias * data.lightViewProj;
+                    mContext->writeBuffer(sizeof(ShadowData), &data, ri.shadowUB);
+                
+                }
 
                 if(!ri.skeletal)
                     return false;
 
-                BoneData data;
-                const auto& bones = ri.skeletalMesh.lock()->getBones();
-                const auto&& identity = glm::mat4(0.f);
-                data.useBone = 1;
-                for(size_t i = 0; i < MAX_BONE_NUM; ++i)
                 {
-                    if(i >= bones.size())
+                    BoneData data;
+                    const auto& bones = ri.skeletalMesh.lock()->getBones();
+                    const auto&& identity = glm::mat4(0.f);
+                    data.useBone = 1;
+                    for(size_t i = 0; i < MAX_BONE_NUM; ++i)
                     {
-                        data.boneTransform[i] = identity;
-                        continue;
-                    }
+                        if(i >= bones.size())
+                        {
+                            data.boneTransform[i] = identity;
+                            continue;
+                        }
 
-                    data.boneTransform[i] = bones[i].transform;
+                        data.boneTransform[i] = bones[i].transform;
+                    }
+                    mContext->writeBuffer(sizeof(BoneData), &data, ri.boneUB);
+                    return false;
                 }
-                mContext->writeBuffer(sizeof(BoneData), &data, ri.boneCB);
-                return false;
 
             }), mRenderInfos.end());
 

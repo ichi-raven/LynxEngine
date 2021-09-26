@@ -11,7 +11,7 @@ namespace Lynx
     , mEnabled(false)
     {
         mTopology = Cutlass::Topology::eTriangleList;
-        mRasterizerState = Cutlass::RasterizerState(Cutlass::PolygonMode::eFill, Cutlass::CullMode::eBack, Cutlass::FrontFace::eClockwise);
+        mRasterizerState = Cutlass::RasterizerState(Cutlass::PolygonMode::eFill, Cutlass::CullMode::eBack, Cutlass::FrontFace::eCounterClockwise);
     }
 
     MeshComponent::~MeshComponent()
@@ -90,25 +90,25 @@ namespace Lynx
         mTransform.update();
     }
 
-    // void MeshComponent::setTopology(Cutlass::Topology topology)
-    // {
-    //     mTopology = topology;
-    // }
+    void MeshComponent::setTopology(Cutlass::Topology topology)
+    {
+        mTopology = topology;
+    }
 
-    // Cutlass::Topology MeshComponent::getTopology() const
-    // {
-    //     return mTopology;
-    // }
+    Cutlass::Topology MeshComponent::getTopology() const
+    {
+        return mTopology;
+    }
     
-    // void MeshComponent::setRasterizerState(const Cutlass::RasterizerState& rasterizerState)
-    // {
-    //     mRasterizerState = rasterizerState;
-    // }
+    void MeshComponent::setRasterizerState(const Cutlass::RasterizerState& rasterizerState)
+    {
+        mRasterizerState = rasterizerState;
+    }
 
-    // const Cutlass::RasterizerState& MeshComponent::getRasterizerState() const
-    // {
-    //     return mRasterizerState;
-    // }
+    const Cutlass::RasterizerState& MeshComponent::getRasterizerState() const
+    {
+        return mRasterizerState;
+    }
 
     void MeshComponent::create(const std::vector<MeshComponent::Vertex>& vertices, const std::vector<uint32_t>& indices)
     {

@@ -16,7 +16,6 @@ namespace Lynx
     public:
         IComponent()
         : mUpdateFlag(true)
-        //, mRequireDestroyFlag(false)
         {
             static uint32_t IDGen = 0;
             mID = IDGen++;
@@ -24,7 +23,7 @@ namespace Lynx
 
         virtual ~IComponent(){};
 
-        virtual void update() = 0;
+        virtual void update(){};
         
         //どうしても識別したいときに使う        
         uint32_t getID() const
@@ -43,20 +42,9 @@ namespace Lynx
         {
             return mUpdateFlag;
         }
-
-        // void requireDestroy()
-        // {
-        //     mRequireDestroyFlag = true;
-        // }
-
-        // bool isDestroyRequired() const
-        // {
-        //     return mRequireDestroyFlag;
-        // }
         
     private:
         uint32_t mID;
         bool mUpdateFlag;
-        //bool mRequireDestroyFlag;
     };
 }

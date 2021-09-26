@@ -67,7 +67,7 @@ namespace Lynx
 		, mActors(commonRegion, context, system)
 		, mSceneChanged(false)
 		{
-			//awake();
+
 		}
 
 		virtual ~Scene(){};
@@ -83,9 +83,9 @@ namespace Lynx
 
 		void updateAll()
 		{
+			mActors.update();
 			update();
-			if(!mSceneChanged)
-				mActors.update();
+			//if(!mSceneChanged)
 		}
 
 	protected://子以外呼ばなくていいです

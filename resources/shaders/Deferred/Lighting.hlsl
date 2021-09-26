@@ -1,10 +1,10 @@
 
-static const int MAX_LIGHT_NUM = 16;
+const int MAX_LIGHT_NUM = 16;
 
 struct Light
 {
-	float   lightType;		  //ライトのタイプ(0:directional, 1:point)
     float3 lightDirection;    // ライトの方向
+	uint   lightType;		  //ライトのタイプ(0:directional, 1:point)
     float4 lightColor;        // ライトのカラー
 	float3 lightPos;		  // ライトの場所(ポイントライトのみ)
 	float  lightRange;		  // ライトの影響範囲(ポイントライトのみ)

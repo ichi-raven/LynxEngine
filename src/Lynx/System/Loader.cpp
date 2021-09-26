@@ -1,12 +1,5 @@
 #include <Lynx/System/Loader.hpp>
 
-// #define TINYGLTF_IMPLEMENTATION
-// #define STB_IMAGE_WRITE_IMPLEMENTATION
-// #define TINYGLTF_NOEXCEPTION
-// #define JSON_NOEXCEPTION
-// #define TINYOBJLOADER_IMPLEMENTATION
-// #include <Lynx/ThirdParty/tiny_obj_loader.h>
-// #include <Lynx/ThirdParty/tiny_gltf.h>
 
 #include <Lynx/Components/MeshComponent.hpp>
 #include <Lynx/Components/MaterialComponent.hpp>
@@ -22,37 +15,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 
-//for extract unique vertex
-// namespace std 
-// {
-//     template<> struct hash<Lynx::MeshComponent::Vertex>
-//     {
-//         size_t operator()(Lynx::MeshComponent::Vertex const& vertex) const 
-//         {
-//             return ((hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec3>()(vertex.normal) << 1)) >> 1) ^ (hash<glm::vec2>()(vertex.uv) << 1);
-//         }
-//     };
-// }
-
 namespace Lynx
 {
-    //inline const glm::vec4 real3ToVec4(const tinyobj::real_t src[], const float w = 1.f)
-    // {
-    //     return glm::vec4(src[0], src[1], src[2], w);
-    // };
-
-    // inline const glm::vec4 real4ToVec4(const tinyobj::real_t src[])
-    // {
-    //     return glm::vec4(src[0], src[1], src[2], src[4]);
-    // };
-
-    // inline bool ends_with(const std::string& str, const std::string& suffix) 
-    // {
-    //     size_t len1 = str.size();
-    //     size_t len2 = suffix.size();
-    //     return len1 >= len2 && str.compare(len1 - len2, len2, suffix) == 0;
-    // }
-
     inline glm::mat4 convert4x4(const aiMatrix4x4& from)
     {
         glm::mat4 to;
@@ -131,8 +95,6 @@ namespace Lynx
 
         mPath = std::string(modelPath);
 
-        
-        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
         auto&& scene = mScenes.emplace_back();
 
         scene = std::shared_ptr<const aiScene>(mImporter.ReadFile(modelPath, aiProcess_Triangulate | aiProcess_FlipUVs));
@@ -146,40 +108,10 @@ namespace Lynx
 
         mDirectory = mPath.substr(0, mPath.find_last_of("/\\"));
 
-        // mSkeleton.setGlobalInverse(glm::inverse(convert4x4(scene->mRootNode->mTransformation)));
-        // mSkeleton.setAIScene(scene);
-
         processNode(scene->mRootNode);
 
-        //assert(0);
-
-        // std::vector<MeshComponent::Vertex> vertices;
-        // std::vector<uint32_t> indices;
-
-        // vertices.reserve(1e5);
-        // indices.reserve(1e5);
-        // uint32_t checkSumV = 0, checkSumI = 0;
         std::cerr << "mesh count : " << mMeshes.size() << "\n";
-        // for(const auto& mesh : mMeshes)
-        // {
-        //     std::cerr << "mesh node name : " << mesh.nodeName << "\n";
-        //     std::cerr << "mesh name : " << mesh.meshName << "\n";
-        //     std::cerr << "mesh vertex num : " << mesh.vertices.size() << "\n";
-        //     std::cerr << "mesh index num : " << mesh.indices.size() << "\n";
-
-        //     vertices.insert(vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
-        //     indices.insert(indices.end(), mesh.indices.begin(), mesh.indices.end());
-        //     std::copy(mesh.vertices.begin(), mesh.vertices.end(), std::back_inserter(vertices));
-        //     std::copy(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices));
-        //     checkSumV += mesh.vertices.size();
-        //     checkSumI += mesh.indices.size();
-        // }
-
-        // std::cerr << "all vertices size : " << vertices.size() << "\n";
-        // std::cerr << "check vertices size : " << checkSumV << "\n";
-        // std::cerr << "all indices size : " << indices.size() << "\n";
-        // std::cerr << "check indices size : " << checkSumI << "\n";
-        //mesh_out.lock()->setRasterizerState(Cutlass::RasterizerState(Cutlass::PolygonMode::eFill, Cutlass::CullMode::eBack, Cutlass::FrontFace::eCounterClockwise));
+        
         mesh_out.lock()->create(mMeshes);
 
         material_out.lock()->clearTextures();
@@ -207,7 +139,6 @@ namespace Lynx
 
         mPath = std::string(modelPath);
 
-        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
         auto&& scene = mScenes.emplace_back();
 
         scene = std::shared_ptr<const aiScene>(mImporter.ReadFile(modelPath, aiProcess_Triangulate | aiProcess_FlipUVs));
@@ -227,22 +158,7 @@ namespace Lynx
         processNode(scene->mRootNode);
 
         std::cerr << "bone num : " << mBoneNum << "\n";
-        //assert(0);
-
-        // std::vector<MeshComponent::Vertex> vertices;
-        // std::vector<uint32_t> indices;
-
-        // vertices.reserve(1e5);
-        // indices.reserve(1e5);
-        // for(const auto& mesh : mMeshes)
-        // {
-        //     std::cerr << "mesh vertex num : " << mesh.vertices.size() << "\n";
-        //     std::copy(mesh.vertices.begin(), mesh.vertices.end(), std::back_inserter(vertices));
-        //     std::copy(mesh.indices.begin(), mesh.indices.end(), std::back_inserter(indices));
-        // }
-
-        //skeletalMesh_out.lock()->setRasterizerState(Cutlass::RasterizerState(Cutlass::PolygonMode::eFill, Cutlass::CullMode::eBack, Cutlass::FrontFace::eCounterClockwise));
-        //skeletalMesh_out.lock()->create(vertices, indices, mSkeleton);
+    
         skeletalMesh_out.lock()->create(mMeshes, mSkeleton);
         
         material_out.lock()->addTextures(mTexturesLoaded);
@@ -271,7 +187,6 @@ namespace Lynx
 
     MeshComponent::Mesh Loader::processMesh(const aiNode* node, const aiMesh* mesh)
     {
-        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
         auto& scene = mScenes.back();
 
         std::cerr << "start process mesh\n";
@@ -414,7 +329,7 @@ namespace Lynx
     //from sample
     std::vector<MaterialComponent::Texture> Loader::loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
     {
-        //warning:debug!!!!!!!!!!!!!!!!!!!!!!!!
+      
         auto& scene = mScenes.back();
 
         std::vector<MaterialComponent::Texture> textures;

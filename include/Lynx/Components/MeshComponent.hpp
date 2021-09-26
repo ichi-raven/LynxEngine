@@ -75,11 +75,11 @@ namespace Lynx
         Transform& getTransform();
         //const Transform& getTransform() const;
 
-        // void setTopology(Cutlass::Topology topology);
-        // Cutlass::Topology getTopology() const;
+        void setTopology(Cutlass::Topology topology);
+        Cutlass::Topology getTopology() const;
 
-        // void setRasterizerState(const Cutlass::RasterizerState& rasterizerState);
-        // const Cutlass::RasterizerState& getRasterizerState() const;
+        void setRasterizerState(const Cutlass::RasterizerState& rasterizerState);
+        const Cutlass::RasterizerState& getRasterizerState() const;
 
         const std::vector<Mesh>& getMeshes() const;
 

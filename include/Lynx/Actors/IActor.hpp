@@ -67,13 +67,11 @@ namespace Lynx
 
         };
 
-        //構築
-        virtual void awake() = 0;
+        virtual void awake(){};
 
-        //初期化(他の参照等をとる)
-        virtual void init() = 0;
+        virtual void init(){};
         
-        virtual void update() = 0;
+        virtual void update(){};
 
         void updateAll()
         {
@@ -115,7 +113,6 @@ namespace Lynx
         std::weak_ptr<Component> addComponent()
         {
             auto tmp = std::make_shared<Component>();
-            //tmp->setContext(mContext);
 
             auto&& p = mComponents.emplace(typeid(Component).hash_code(), std::vector<std::shared_ptr<IComponent>>());
             if(p.second)
@@ -191,6 +188,5 @@ namespace Lynx
         //Cutlass
         std::shared_ptr<Cutlass::Context> mContext;
 
-        //bool mRequireDestroyFlag;
     };
 };
