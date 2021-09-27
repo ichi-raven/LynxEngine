@@ -39,8 +39,8 @@ namespace Lynx
     , mPostEffectAdded(false)
     , mSpriteAdded(false)
     {
-        assert(Result::eSuccess == mContext->createTextureFromFile("../resources/textures/texture.png", mDebugTex));
-        assert(Result::eSuccess == mContext->createTextureFromFile("../resources/textures/unitysky.png", mDebugSky));
+        assert(Result::eSuccess == mContext->createTextureFromFile("Resources/textures/texture.png", mDebugTex));
+        //assert(Result::eSuccess == mContext->createTextureFromFile("Resources/textures/unitysky.png", mDebugSky));
 
         mRTTexs.reserve(hwindows.size());
 
@@ -57,14 +57,14 @@ namespace Lynx
         }
 
         //デフォルトシェーダ
-        mShadowVS           = Shader("../resources/shaders/Shadow/shadow_vert.spv",     "VSMain");
-        mShadowFS           = Shader("../resources/shaders/Shadow/shadow_frag.spv",     "PSMain");
-        mDefferedSkinVS     = Shader("../resources/shaders/Deferred/GBuffer_vert.spv",  "VSMain");
-        mDefferedSkinFS     = Shader("../resources/shaders/Deferred/GBuffer_frag.spv",  "PSMain");
-        mLightingVS         = Shader("../resources/shaders/Deferred/Lighting_vert.spv", "VSMain");
-        mLightingFS         = Shader("../resources/shaders/Deferred/Lighting_frag.spv", "PSMain");
-        mSpriteVS           = Shader("../resources/shaders/Sprite/Sprite_vert.spv",     "VSMain");
-        mSpriteFS           = Shader("../resources/shaders/Sprite/Sprite_frag.spv",     "PSMain");
+        mShadowVS           = Shader("Resources/Shaders/Shadow/shadow_vert.spv",     "VSMain");
+        mShadowFS           = Shader("Resources/Shaders/Shadow/shadow_frag.spv",     "PSMain");
+        mDefferedSkinVS     = Shader("Resources/Shaders/Deferred/GBuffer_vert.spv",  "VSMain");
+        mDefferedSkinFS     = Shader("Resources/Shaders/Deferred/GBuffer_frag.spv",  "PSMain");
+        mLightingVS         = Shader("Resources/Shaders/Deferred/Lighting_vert.spv", "VSMain");
+        mLightingFS         = Shader("Resources/Shaders/Deferred/Lighting_frag.spv", "PSMain");
+        mSpriteVS           = Shader("Resources/Shaders/Sprite/Sprite_vert.spv",     "VSMain");
+        mSpriteFS           = Shader("Resources/Shaders/Sprite/Sprite_frag.spv",     "PSMain");
 
         {//シャドウマップ、パス
             Cutlass::TextureInfo ti;
@@ -115,8 +115,8 @@ namespace Lynx
             mContext->createRenderPass(RenderPassInfo(hw), rp);
             GraphicsPipelineInfo gpi
             (
-                Shader("../resources/shaders/present/vert.spv", "main"),
-                Shader("../resources/shaders/present/frag.spv", "main"),
+                Shader("Resources/Shaders/present/vert.spv", "main"),
+                Shader("Resources/Shaders/present/frag.spv", "main"),
                 rp,
                 DepthStencilState::eNone,
                 RasterizerState(PolygonMode::eFill, CullMode::eNone, FrontFace::eClockwise, 1.f),
@@ -141,7 +141,8 @@ namespace Lynx
             mContext->createTexture(ti, mDepthBuffers.emplace_back());
 
             {//テクスチャの画面表示用コマンドを作成
-                ShaderResourceSet SRSet[mFrameCount];
+                std::vector<ShaderResourceSet> SRSet;
+                SRSet.resize(mFrameCount);
                 for(size_t i = 0; i < mFrameCount; ++i)
                     SRSet[i].bind(0, mRTTexs.back());
                     //SRSet[i].bind(0, mGBuffer.normalRT);
@@ -200,20 +201,20 @@ namespace Lynx
         }
         {
             cl.clear();
-            cl.begin(mGBuffer.renderPass);
-            cl.end();
+            //cl.begin(mGBuffer.renderPass);
+            //cl.end();
             mContext->createCommandBuffer(cl, mGeometryCB);
         }
         {
             cl.clear();
-            cl.begin(mLightingPass);
-            cl.end();
+            //cl.begin(mLightingPass);
+            //cl.end();
             mContext->createCommandBuffer(cl, mLightingCB);
         }
         {
             cl.clear();
-            cl.begin(mSpritePass);
-            cl.end();
+            //cl.begin(mSpritePass);
+            //cl.end();
             mContext->createCommandBuffer(cl, mSpriteCB);
         }
         //mContext->createCommandBuffer(cl, mForwardCB);
@@ -965,17 +966,20 @@ namespace Lynx
                     ShadowData data;
                     glm::mat4 view;
                     auto& transform = ri.skeletal ? ri.skeletalMesh.lock()->getTransform() : ri.mesh.lock()->getTransform();
-                    switch(mLights[0].lock()->getType())
+                    if (!mLights.empty())
                     {
+                        switch (mLights[0].lock()->getType())
+                        {
                         case LightComponent::LightType::eDirectionalLight:
                             view = glm::lookAtRH(mLights[0].lock()->getDirection() * -10.f, glm::vec3(0, 0, 0), glm::vec3(0, 1.f, 0));
-                        break;
+                            break;
                         case LightComponent::LightType::ePointLight:
                             view = glm::lookAtRH(mLights[0].lock()->getTransform().getPos(), transform.getPos(), glm::vec3(0, 1.f, 0));
-                        break;
+                            break;
                         default:
                             assert(!"invalid light param type!");
-                        break;
+                            break;
+                        }
                     }
 
                     auto&& proj = glm::perspective(glm::radians(60.f), 1.f * mMaxWidth / mMaxHeight, 1.f, 1000.f);

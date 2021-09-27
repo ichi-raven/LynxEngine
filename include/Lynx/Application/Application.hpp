@@ -253,7 +253,7 @@ namespace Lynx
 		{
 			//入力更新
 #ifdef _DEBUG
-			assert(Cutlass::Result::eSuccess == mContext->updateInput())
+			assert(Cutlass::Result::eSuccess == mContext->updateInput());
 #else
 			mContext->updateInput();
 #endif

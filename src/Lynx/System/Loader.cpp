@@ -20,6 +20,7 @@ namespace Lynx
     inline glm::mat4 convert4x4(const aiMatrix4x4& from)
     {
         glm::mat4 to;
+
         //transpose
         for(uint8_t i = 0; i < 4; ++i)
             for(uint8_t j = 0; j < 4; ++j)
@@ -305,11 +306,11 @@ namespace Lynx
             //     }
             mSkeleton.bones[boneIndex].transform = glm::mat4(1.f);
             //頂点セット
-            for (uint j = 0; j < mesh->mBones[i]->mNumWeights; j++) 
+            for ( uint32_t j = 0; j < mesh->mBones[i]->mNumWeights; j++) 
             {
                 size_t vertexID = mesh->mBones[i]->mWeights[j].mVertexId;
                 float weight = mesh->mBones[i]->mWeights[j].mWeight;
-                for (uint k = 0; k < 4; k++)
+                for ( uint32_t k = 0; k < 4; k++)
                 {
                     if (vbdata_out[vertexID].weights[k] == 0.0) 
                     {

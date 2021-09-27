@@ -1,3 +1,5 @@
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <Lynx/Components/TextComponent.hpp>
 
 #include <Lynx/Components/SpriteComponent.hpp>

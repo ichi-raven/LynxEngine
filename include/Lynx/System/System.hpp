@@ -8,8 +8,10 @@
 
 namespace Lynx
 {
-    struct System
+    class System
     {
+    public:
+
         std::unique_ptr<Loader> loader;
         std::unique_ptr<Renderer> renderer;
         std::unique_ptr<Input> input;

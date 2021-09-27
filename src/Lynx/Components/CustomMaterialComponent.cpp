@@ -10,9 +10,6 @@ namespace Lynx
 
         mColorBlend = Cutlass::ColorBlend::eDefault;
         mMultiSampleState = Cutlass::MultiSampleState::eDefault;
-
-        mVS = Cutlass::Shader(Resource::Shader::genPath(Resource::Shader::objVert), "main");
-	    mFS = Cutlass::Shader(Resource::Shader::genPath(Resource::Shader::frag), "main");
     }
 
     CustomMaterialComponent::~CustomMaterialComponent()

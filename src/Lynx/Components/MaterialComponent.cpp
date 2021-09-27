@@ -3,6 +3,7 @@
 #include <Lynx/Resources/Resources.hpp>
 
 #include <algorithm>
+#include <iterator>
 
 namespace Lynx
 {
